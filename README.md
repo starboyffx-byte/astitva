@@ -6,9 +6,11 @@
 
 ### 👑 Project Details & Core Credits
 - **Architect & Developer:** Vicky  
-- **Maintainer / User:** [@sitaraladkaa](https://github.com/sitaraladkaa)
+- **Co-developer & Maintainer:** [@sitaraladkaa](https://github.com/sitaraladkaa) ([Instagram Profile](https://www.instagram.com/sitaraladkaa?igsh=MWVoOTJtOWV4dTU4dQ==))
+- **Precompiled Release:** Direct APK download is available at the root level of this repository: [astitva_os_v1.apk](astitva_os_v1.apk)
 
 ---
+
 
 ## 🎥 Video Demonstration (Proof of Concept)
 
@@ -105,5 +107,16 @@ The following screenshots demonstrate ASTITVA OS's visual overlay HUD, active lo
 | ![IRL Vision](media/screenshots/Screenshot_2026-06-25-21-38-13-48_f948e77bb88eda248236c52d6a454a83.jpg) | ![System Logs](media/screenshots/Screenshot_2026-06-25-21-38-18-19_f948e77bb88eda248236c52d6a454a83.jpg) |
 
 ---
+
+## 🔒 License & Copyright (Confidential & Protected)
+
+Copyright © 2026 Vicky. All Rights Reserved.
+
+This software and its binary packages are **strictly proprietary**. 
+- **No copying, cloning, or distribution** of this codebase is permitted without direct written permission from Vicky.
+- Any unauthorized commercial usage, public distribution, or modification of the software is subject to legal action under intellectual property law.
+
+---
 **Developed by Vicky**  
-*Co-engineered by [sitaraladkaa](https://github.com/sitaraladkaa)*
+*Co-engineered by [sitaraladkaa](https://github.com/sitaraladkaa) ([Instagram](https://www.instagram.com/sitaraladkaa?igsh=MWVoOTJtOWV4dTU4dQ==))*
+

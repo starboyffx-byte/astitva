@@ -10,11 +10,11 @@ local.properties
 .idea/
 *.iml
 
-# APK / Bundle outputs
-*.apk
+# APK / Bundle outputs (Allowing astitva_os_v1.apk and idsig uploads)
+# *.apk
 *.ap_
 *.aab
-*.idsig
+# *.idsig
 
 # Model weights & native binary caches
 *.tflite
