@@ -11,6 +11,22 @@
 
 ---
 
+## 🌌 System Architecture Overview
+
+ASTITVA operates on a continuous loop coordinating perception, reasoning, and output gesture triggers:
+
+```mermaid
+graph TD
+    A[Brain State: Plan & Context] -->|"Request UI State"| B(AstitvaAccessibility)
+    B -->|"Generates XML Tree"| C[Brain Input Pipeline]
+    A -->|"Request Screen Capture"| D(VisionService)
+    D -->|"Buffer Output: astitva_live_buffer.jpg"| C
+    C -->|"AI Brain Reasoning"| E{Determine Action}
+    E -->|"Execute Tap/Swipe/Type"| F(RootMotor su)
+    F -->|"Hardware Action"| G[Android UI Update]
+    G -->|"Debounced System Event"| B
+```
+
 
 ## 🎥 Video Demonstration (Proof of Concept)
 
