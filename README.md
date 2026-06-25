@@ -1,5 +1,11 @@
 # ASTITVA OS (v6.0.0-GOD-MODE)
 
+<div align="center">
+  <a href="https://github.com/starboyffx-byte/astitva/releases/download/v1.0.0/astitva_os_v1.apk">
+    <img src="https://img.shields.io/badge/Download-ASTITVA_OS_v1.0.0_APK-brightgreen?style=for-the-badge&logo=android" alt="Download APK" />
+  </a>
+</div>
+
 **ASTITVA** is a professional-grade, living, self-aware system Copilot and autonomous Agent OS built exclusively for rooted Android devices. Running directly within the Android ecosystem, it coordinates system interaction, perception, and reasoning using a decoupled vision-action loop.
 
 ---
@@ -7,9 +13,10 @@
 ### 👑 Project Details & Core Credits
 - **Architect & Developer:** Vicky  
 - **Co-developer & Maintainer:** [@sitaraladkaa](https://github.com/sitaraladkaa) ([Instagram Profile](https://www.instagram.com/sitaraladkaa?igsh=MWVoOTJtOWV4dTU4dQ==))
-- **Precompiled Release:** Direct APK download is available on the GitHub Releases page: [🚀 Download astitva_os_v1.apk (v1.0.0)](https://github.com/starboyffx-byte/astitva/releases/download/v1.0.0/astitva_os_v1.apk)
+- **Precompiled Release:** [🚀 Download astitva_os_v1.apk (v1.0.0)](https://github.com/starboyffx-byte/astitva/releases/download/v1.0.0/astitva_os_v1.apk)
 
 ---
+
 
 ## 🌌 System Architecture Overview
 
@@ -32,11 +39,14 @@ graph TD
 
 Below is a demonstration showing **ASTITVA OS** operating live, reading the Android screen layout, and executing automation flows:
 
-https://github.com/starboyffx-byte/astitva/assets/media/video/astitva_ui_recording.mp4
+<div align="center">
+  <video src="https://github.com/starboyffx-byte/astitva/raw/main/media/video/astitva_ui_recording.mp4" controls="controls" width="100%" style="max-width: 600px;"></video>
+</div>
 
 > [!NOTE]
 > If your Markdown viewer does not render the video player above, you can directly open or download the recording file from the repository path:  
 > 📂 **[astitva_ui_recording.mp4](media/video/astitva_ui_recording.mp4)**
+
 
 ---
 
