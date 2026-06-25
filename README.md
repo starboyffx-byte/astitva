@@ -1,86 +1,109 @@
 # ASTITVA OS (v6.0.0-GOD-MODE)
 
-**ASTITVA** is a professional-grade, living, self-aware system Copilot and autonomous Agent OS built exclusively for Android devices (tested on rooted Termux environments).
-
-**Developed by Vicky**
+**ASTITVA** is a professional-grade, living, self-aware system Copilot and autonomous Agent OS built exclusively for rooted Android devices. Running directly within the Android ecosystem, it coordinates system interaction, perception, and reasoning using a decoupled vision-action loop.
 
 ---
 
-## 🌌 System Architecture Overview
+### 👑 Project Details & Core Credits
+- **Architect & Developer:** Vicky  
+- **Maintainer / User:** [@sitaraladkaa](https://github.com/sitaraladkaa)
 
-ASTITVA runs as a continuous perception-action loop deeply integrated with the Android OS via superuser (`su`) privileges, accessibility APIs, and visual projection feeds.
+---
 
-```mermaid
-graph TD
-    A[Brain State: Plan & Context] -->|Request UI State| B(AstitvaAccessibility)
-    B -->|Generates XML Tree| C[Brain Input Pipeline]
-    A -->|Request Screen Capture| D(VisionService)
-    D -->|Buffer Output: astitva_live_buffer.jpg| C
-    C -->|AI Brain Reasoning| E{Determine Action}
-    E -->|Execute Tap/Swipe/Type| F(RootMotor su)
-    F -->|Hardware Action| G[Android UI Update]
-    G -->|Debounced System Event| B
+## 🎥 Video Demonstration (Proof of Concept)
+
+Below is a demonstration showing **ASTITVA OS** operating live, reading the Android screen layout, and executing automation flows:
+
+https://github.com/starboyffx-byte/astitva/assets/media/video/astitva_ui_recording.mp4
+
+> [!NOTE]
+> If your Markdown viewer does not render the video player above, you can directly open or download the recording file from the repository path:  
+> 📂 **[astitva_ui_recording.mp4](media/video/astitva_ui_recording.mp4)**
+
+---
+
+## 🛠️ Complete Installation & Provisioning Guide
+
+To run ASTITVA OS, your device must be **rooted** (with `su` binary installed and accessible to Termux) and have Android OS 8.0 (API level 26) or higher.
+
+### Step 1: Clone the Repository & Setup Environment
+Ensure that you have Git, Python, and the Android compiler toolchain installed in your Termux environment:
+```bash
+git clone https://github.com/starboyffx-byte/astitva.git
+cd astitva
 ```
 
----
+### Step 2: Build the APK from Source
+We provide a crash-proof shell script `build_v2.sh` to compile ASTITVA directly on your Android device using Termux:
+```bash
+chmod +x build_v2.sh
+./build_v2.sh
+```
+*This script will compile resources, link assets, invoke `kotlinc` with bundled Kotlin/TFLite libraries, run `d8` to dex the bytecode, zipalign the final file, generate a keystore, and sign the APK.*
 
-## 🛠️ Codebase Subsystems & Modules Explained
+### Step 3: Run the Automatic Provisioning Script
+Once compiled, run the installation script using root privileges to automate system configuration and bypass permission dialogues:
+```bash
+chmod +x run_setup.sh
+./run_setup.sh
+```
 
-### 1. **MainActivity (`MainActivity.kt`)**
-- **Location:** [MainActivity.kt](app/src/main/java/com/vicky/astitva/MainActivity.kt)
-- **Role:** Main controller, orchestrator, and UI thread host. Binds overlays, handles foreground service status, hooks speech-to-text listeners, initializes local llama inference engines, and manages live logging activity feeds.
-
-### 2. **RootMotor (`RootMotor.kt`)**
-- **Location:** [RootMotor.kt](app/src/main/java/com/vicky/astitva/core/RootMotor.kt)
-- **Role:** The physical output driver ("Hands"). Spawns a root shell `su` process to execute inputs such as:
-  - `tap(x, y)`: Clicks exact screen coordinates.
-  - `longTap(x, y, duration)`: Holds coordinate for a specified duration.
-  - `typeText(text)`: Formats and inserts text payload into editable text areas.
-  - `swipe(x1, y1, x2, y2, duration)`: Standard dragging and scrolling gestures.
-
-### 3. **Accessibility Engine (`AstitvaAccessibility.kt`)**
-- **Location:** [AstitvaAccessibility.kt](app/src/main/java/com/vicky/astitva/core/AstitvaAccessibility.kt)
-- **Role:** The semantic screen analyzer. Debounces layout events to minimize CPU overhead and recursively dumps the system window structure to a clean custom XML node tree outlining text contents, clickable attributes, and screen boundaries.
-
-### 4. **Overlay HUD (`AstitvaOverlayService.kt`)**
-- **Location:** [AstitvaOverlayService.kt](app/src/main/java/com/vicky/astitva/core/AstitvaOverlayService.kt)
-- **Role:** Draws system-alert overlay windows containing a holographic animated "Orb" WebView (`orb.html`), speech dialog bubbles, and manages draggable touch listeners to move the floating HUD across any running screen.
-
-### 5. **Vision Service (`VisionService.kt`)**
-- **Location:** [VisionService.kt](app/src/main/java/com/vicky/astitva/core/VisionService.kt)
-- **Role:** The visual sensor ("Eyes"). Runs a high-performance foreground MediaProjection projection stream. Throttles frame captures to 1000ms intervals and monitors frame changes using a 16x16 downsampled comparison logic to preserve CPU and battery life. Saves output buffers to `astitva_live_buffer.jpg`.
-
-### 6. **Brain Manager (`BrainManager.kt`)**
-- **Location:** [BrainManager.kt](app/src/main/java/com/vicky/astitva/core/BrainManager.kt)
-- **Role:** Configures AI LLM endpoints. Routes queries securely to cloud APIs (Gemini, Claude, OpenAI, DeepSeek, etc.) and lists offline GGUF local model weights from `/sdcard/AstitvaModels`.
-
-### 7. **Memory Core Database (`MemoryCore.kt`)**
-- **Location:** [MemoryCore.kt](app/src/main/java/com/vicky/astitva/core/MemoryCore.kt)
-- **Role:** Long-term database memory. Built on SQLite FTS5 (Full-Text Search) to index facts, commands, and session message chains. Seamlessly falls back to SQL `LIKE` wildcard search patterns if FTS virtual compilation encounters engine errors.
-
-### 8. **Security Utils (`SecurityUtils.kt`)**
-- **Location:** [SecurityUtils.kt](app/src/main/java/com/vicky/astitva/utils/SecurityUtils.kt)
-- **Role:** Protects keys. Uses Android KeyStore API to generate a hardware-backed 256-bit AES cryptographic key. Encrypts user API credentials with random 12-byte initialization vectors (AES/GCM/NoPadding) before saving them to system shared preferences.
-
-### 9. **Agent Broker (`AgentBroker.kt`)**
-- **Location:** [AgentBroker.kt](app/src/main/java/com/vicky/astitva/utils/AgentBroker.kt)
-- **Role:** Decoupled event broker. Implements a thread-safe publish-subscribe handler pattern to dispatch alerts and logs between background services and foreground controllers.
-
-### 10. **Agentic Tools (`AgenticTools.kt`)**
-- **Location:** [AgenticTools.kt](app/src/main/java/com/vicky/astitva/core/AgenticTools.kt)
-- **Role:** Feature library. Provides standard programmatic functions for reading inbox SMS messages, fetching current coordinates (GPS), notification listing, terminal command runs, and network health monitoring.
+**What the setup script does automatically:**
+1. Installs the signed APK using `pm install -r -d`.
+2. Automatically grants all critical runtime permissions (Camera, GPS Location, Call, SMS, Storage, Notifications).
+3. Configures system AppOps to allow Drawing Over Other Apps (`SYSTEM_ALERT_WINDOW`) and `MANAGE_EXTERNAL_STORAGE`.
+4. Registers and turns on ASTITVA's debounced Accessibility Service.
+5. Configures ASTITVA as your Android device's Default System Voice Assistant.
 
 ---
 
-## 📸 Media & Screenshots (UI Demo)
+## 🧠 Core Features & Subsystem Architecture
 
-### 🎥 Demonstration Recording
-The latest UI walk-through and screen recording is committed inside the repository directory:  
-[🎥 astitva_ui_recording.mp4](media/video/astitva_ui_recording.mp4)
+### 1. Perception Loop (Eyes)
+- **Vision Pipeline (`VisionService.kt`):** Continually records the device display using Android's foreground MediaProjection API. Downsamples captures to a 16x16 matrix to compare state changes; if the screen state is unchanged by 98.5% or more, it skips disk writing to save battery. Writes stable frames to `/sdcard/astitva_live_buffer.jpg` for AI consumption.
+- **Accessibility Parser (`AstitvaAccessibility.kt`):** Debounces UI events to build a clean XML node tree of active window widgets, extracting labels, IDs, coordinates, and action vectors:
+  ```xml
+  <node class="Button" text="Search" id="com.android:id/btn" bounds="[100,200][300,300]" clickable="true" />
+  ```
 
-### 🖼️ UI Screenshots
-The 10 most recent snapshots displaying Astitva's interface are committed inside:  
-[🖼️ media/screenshots/](media/screenshots/)
+### 2. Motor Execution (Hands)
+- **RootMotor (`RootMotor.kt`):** Interacts directly with the device's hardware screen. Bypasses sandbox constraints by writing gesture sequences to a superuser `su` pipe:
+  - `tap(x, y)`: Mimics micro-second hardware click gestures.
+  - `longTap(x, y)`: Emulates presses.
+  - `typeText(text)`: Formats strings (replacing space delimiters with URL-safe codes to prevent shell parsing crashes) and inputs them into selected inputs.
+  - `swipe(x1, y1, x2, y2, duration)`: Implements list scrolling, gesture navigation, and notifications expansion.
+
+### 3. Cognition & Memory (Brain)
+- **Memory Database (`MemoryCore.kt`):** Incorporates SQLite FTS5 (Full-Text Search) to index long-term context facts and conversational message chains. Falls back to SQLite `LIKE` matching if compiler indices fail.
+- **Brain Engine (`BrainManager.kt`):** Routes user prompts dynamically. Supports cloud LLM providers (Gemini, Claude, OpenAI, DeepSeek, Groq, OpenRouter, SambaNova, Cerebras, GitHub Models) and lists offline local GGUF models stored inside `/sdcard/AstitvaModels`.
+- **API Key Security (`SecurityUtils.kt`):** Safeguards private API keys using hardware-backed key generation inside the **Android Keystore System**. Credentials are encrypted using `AES/GCM/NoPadding` with a 12-byte random initialization vector before saving to disk.
 
 ---
-**Developed by Vicky**
+
+## 🖼️ User Interface Screenshot Gallery
+
+The following screenshots demonstrate ASTITVA OS's visual overlay HUD, active logs, live assistant configurations, and holographic Orb:
+
+| **Holographic Orb Overlay** | **Main Automation Control Panel** |
+|:---:|:---:|
+| ![Holographic Orb Overlay](media/screenshots/Screenshot_2026-06-25-21-37-26-51_f948e77bb88eda248236c52d6a454a83.jpg) | ![Main Panel](media/screenshots/Screenshot_2026-06-25-21-37-29-67_f948e77bb88eda248236c52d6a454a83.jpg) |
+
+| **Voice Assistant Session** | **Permission & Services Status** |
+|:---:|:---:|
+| ![Voice Assistant](media/screenshots/Screenshot_2026-06-25-21-37-37-49_f948e77bb88eda248236c52d6a454a83.jpg) | ![Services Status](media/screenshots/Screenshot_2026-06-25-21-37-41-96_f948e77bb88eda248236c52d6a454a83.jpg) |
+
+| **Autonomous Agent Controls** | **Local GGUF VLM Config** |
+|:---:|:---:|
+| ![Autonomous Controls](media/screenshots/Screenshot_2026-06-25-21-37-47-46_f948e77bb88eda248236c52d6a454a83.jpg) | ![GGUF Config](media/screenshots/Screenshot_2026-06-25-21-37-52-48_f948e77bb88eda248236c52d6a454a83.jpg) |
+
+| **Memory Database Log Viewer** | **Security & Keys Setup** |
+|:---:|:---:|
+| ![Memory Database](media/screenshots/Screenshot_2026-06-25-21-38-02-77_f948e77bb88eda248236c52d6a454a83.jpg) | ![Security & Keys](media/screenshots/Screenshot_2026-06-25-21-38-08-90_f948e77bb88eda248236c52d6a454a83.jpg) |
+
+| **IRL Vision Analysis Feed** | **Active System Logs View** |
+|:---:|:---:|
+| ![IRL Vision](media/screenshots/Screenshot_2026-06-25-21-38-13-48_f948e77bb88eda248236c52d6a454a83.jpg) | ![System Logs](media/screenshots/Screenshot_2026-06-25-21-38-18-19_f948e77bb88eda248236c52d6a454a83.jpg) |
+
+---
+**Developed by Vicky**  
+*Co-engineered by [sitaraladkaa](https://github.com/sitaraladkaa)*
