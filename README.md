@@ -7,7 +7,7 @@
 ### 👑 Project Details & Core Credits
 - **Architect & Developer:** Vicky  
 - **Co-developer & Maintainer:** [@sitaraladkaa](https://github.com/sitaraladkaa) ([Instagram Profile](https://www.instagram.com/sitaraladkaa?igsh=MWVoOTJtOWV4dTU4dQ==))
-- **Precompiled Release:** Direct APK download is available at the root level of this repository: [astitva_os_v1.apk](astitva_os_v1.apk)
+- **Precompiled Release:** Direct APK download is available on the GitHub Releases page: [🚀 Download astitva_os_v1.apk (v1.0.0)](https://github.com/starboyffx-byte/astitva/releases/download/v1.0.0/astitva_os_v1.apk)
 
 ---
 
