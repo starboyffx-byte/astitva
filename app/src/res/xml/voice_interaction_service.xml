@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="com.vicky.astitva.core.AstitvaVoiceInteractionSessionService"
+    android:recognitionService="com.vicky.astitva.core.AstitvaSpeechRecognitionService"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="true"
+    android:supportsLocalInteraction="true" />

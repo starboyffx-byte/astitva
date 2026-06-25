@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="pearl_white">#FAFAFA</color>
+    <color name="rose_gold">#E5C1CD</color>
+    <color name="soft_pink">#FFB6C1</color>
+    <color name="accent_pink">#FF85A2</color>
+    <color name="lavender">#E6E6FA</color>
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#4A4A4A</color>
+    <color name="glass_white">#E6FFFFFF</color>
+    <color name="card_shadow">#1A000000</color>
+    
+    <!-- Legacy compatibility -->
+    <color name="primary">#FFB6C1</color>
+    <color name="background">#FAFAFA</color>
+</resources>

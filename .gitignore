@@ -1,0 +1,27 @@
+# Gradle files
+.gradle/
+build/
+gen/
+
+# Local configuration files
+local.properties
+
+# Android Studio / IntelliJ files
+.idea/
+*.iml
+
+# APK / Bundle outputs
+*.apk
+*.ap_
+*.aab
+*.idsig
+
+# Model weights & native binary caches
+*.tflite
+*.gguf
+aapt2
+
+# Temp and OS files
+*.log
+*.tmp
+.DS_Store

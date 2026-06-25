@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <style>
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+        }
+    </style>
+    <!-- Load Three.js and GLTFLoader CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="window.threeLoadError = true;"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js" onerror="window.gltfLoadError = true;"></script>
+</head>
+<body>
+    <canvas id="webgl-canvas"></canvas>
+
+    <script type="text/javascript">
+        const canvas = document.getElementById("webgl-canvas");
+        let activeState = 0; // 0=idle, 1=listening, 2=thinking, 3=planning, 4=executing, 5=success, 6=error, 7=talking
+        let startTime = Date.now();
+
+        function setState(state) {
+            console.log("Waifu Avatar Setting State to: " + state);
+            if (state === "idle") activeState = 0;
+            else if (state === "listening") activeState = 1;
+            else if (state === "thinking") activeState = 2;
+            else if (state === "planning") activeState = 3;
+            else if (state === "executing") activeState = 4;
+            else if (state === "success") activeState = 5;
+            else if (state === "error") activeState = 6;
+            else if (state === "talking") activeState = 7;
+        }
+        window.setState = setState;
+
+        if (window.THREE && !window.threeLoadError) {
+            try {
+                runThreeJSWaifu();
+            } catch (e) {
+                console.error("ThreeJS Waifu init failed, running fallback", e);
+                fallback2D();
+            }
+        } else {
+            fallback2D();
+        }
+
+        function runThreeJSWaifu() {
+            const scene = new THREE.Scene();
+            
+            const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 4.2;
+            camera.position.y = 0.12;
+
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Soft studio lighting
+            const ambientLight = new THREE.AmbientLight(0xfff5f5, 0.85); // Warm pinkish fill
+            scene.add(ambientLight);
+
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            keyLight.position.set(1.5, 3, 2.5);
+            scene.add(keyLight);
+
+            const rimLight = new THREE.DirectionalLight(0xd8b4fe, 0.5); // Lilac rim light
+            rimLight.position.set(-2, 2, -2);
+            scene.add(rimLight);
+
+            const fillLight = new THREE.PointLight(0xffccd5, 0.5, 8); // Soft chest fill
+            fillLight.position.set(0, -1, 1.5);
+            scene.add(fillLight);
+
+            // Hierarchy Root Group
+            const rootGroup = new THREE.Group();
+            scene.add(rootGroup);
+
+            // Procedural Avatar Group (used as base and offline fallback)
+            const proceduralAvatar = new THREE.Group();
+            rootGroup.add(proceduralAvatar);
+
+            // Head Group (rotates for looking around)
+            const headGroup = new THREE.Group();
+            proceduralAvatar.add(headGroup);
+
+            // Materials
+            const skinMat = new THREE.MeshStandardMaterial({
+                color: 0xffe3d6, // Soft anime skin tone
+                roughness: 0.55,
+                metalness: 0.02
+            });
+
+            const hairColor = 0xffa6c9; // Pastel cherry blossom pink
+            const hairMat = new THREE.MeshStandardMaterial({
+                color: hairColor,
+                roughness: 0.65,
+                metalness: 0.05
+            });
+
+            // 1. Head Base
+            const headGeo = new THREE.SphereGeometry(0.8, 32, 32);
+            headGeo.scale(1.0, 1.06, 0.94);
+            const head = new THREE.Mesh(headGeo, skinMat);
+            headGroup.add(head);
+
+            // 2. Cute tiny nose
+            const noseGeo = new THREE.ConeGeometry(0.04, 0.09, 4);
+            const nose = new THREE.Mesh(noseGeo, skinMat);
+            nose.position.set(0, -0.19, 0.77);
+            nose.rotation.x = 0.25;
+            headGroup.add(nose);
+
+            // 3. Cheeks Blush (Dual glow)
+            const blushMat = new THREE.MeshBasicMaterial({
+                color: 0xff5c8a,
+                transparent: true,
+                opacity: 0.45
+            });
+            const cheekGeo = new THREE.SphereGeometry(0.11, 16, 12);
+            cheekGeo.scale(1.3, 0.6, 0.3);
+
+            const leftCheek = new THREE.Mesh(cheekGeo, blushMat);
+            leftCheek.position.set(-0.43, -0.22, 0.71);
+            headGroup.add(leftCheek);
+
+            const rightCheek = leftCheek.clone();
+            rightCheek.position.x = 0.43;
+            headGroup.add(rightCheek);
+
+            // 4. Sailor Suit Collar & Neck & Red Bow Tie
+            const neckGeo = new THREE.CylinderGeometry(0.17, 0.2, 0.4, 16);
+            const neck = new THREE.Mesh(neckGeo, skinMat);
+            neck.position.y = -0.84;
+            neck.position.z = -0.06;
+            proceduralAvatar.add(neck);
+
+            // Shirt body (Navy blue seifuku shirt)
+            const bodyGeo = new THREE.CylinderGeometry(0.28, 0.52, 0.8, 24);
+            const shirtMat = new THREE.MeshStandardMaterial({ color: 0x1d3557, roughness: 0.72 });
+            const body = new THREE.Mesh(bodyGeo, shirtMat);
+            body.position.y = -1.4;
+            body.position.z = -0.12;
+            proceduralAvatar.add(body);
+
+            // White Sailor Collar
+            const collarGeo = new THREE.CylinderGeometry(0.25, 0.42, 0.22, 16);
+            const collarMat = new THREE.MeshStandardMaterial({ color: 0xf1faee, roughness: 0.6 });
+            const collar = new THREE.Mesh(collarGeo, collarMat);
+            collar.position.set(0, -1.02, -0.08);
+            collar.scale.set(1.18, 0.6, 1.15);
+            proceduralAvatar.add(collar);
+
+            // Red Bow Tie (Crime-red anime ribbon)
+            const bowGroup = new THREE.Group();
+            bowGroup.position.set(0, -1.08, 0.36);
+            proceduralAvatar.add(bowGroup);
+
+            const knotGeo = new THREE.SphereGeometry(0.046, 8, 8);
+            const bowMat = new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.5 });
+            const knot = new THREE.Mesh(knotGeo, bowMat);
+            bowGroup.add(knot);
+
+            const wingGeo = new THREE.ConeGeometry(0.085, 0.18, 4);
+            wingGeo.scale(1.0, 1.0, 0.4);
+
+            const leftWing = new THREE.Mesh(wingGeo, bowMat);
+            leftWing.position.set(-0.1, 0.02, 0);
+            leftWing.rotation.z = Math.PI / 2.3;
+            bowGroup.add(leftWing);
+
+            const rightWing = new THREE.Mesh(wingGeo, bowMat);
+            rightWing.position.set(0.1, 0.02, 0);
+            rightWing.rotation.z = -Math.PI / 2.3;
+            bowGroup.add(rightWing);
+
+            const ribbonTailGeo = new THREE.ConeGeometry(0.045, 0.24, 4);
+            ribbonTailGeo.scale(1.0, 1.0, 0.3);
+            const leftTail = new THREE.Mesh(ribbonTailGeo, bowMat);
+            leftTail.position.set(-0.06, -0.12, -0.01);
+            leftTail.rotation.z = 0.25;
+            bowGroup.add(leftTail);
+
+            const rightTail = new THREE.Mesh(ribbonTailGeo, bowMat);
+            rightTail.position.set(0.06, -0.12, -0.01);
+            rightTail.rotation.z = -0.25;
+            bowGroup.add(rightTail);
+
+            // 5. High-Quality Anime Eyes (Large & shiny)
+            const eyeGroupLeft = new THREE.Group();
+            eyeGroupLeft.position.set(-0.31, -0.04, 0.74);
+            headGroup.add(eyeGroupLeft);
+
+            const eyeGroupRight = new THREE.Group();
+            eyeGroupRight.position.set(0.31, -0.04, 0.74);
+            headGroup.add(eyeGroupRight);
+
+            // Sclera
+            const scleraGeo = new THREE.SphereGeometry(0.16, 16, 16);
+            scleraGeo.scale(1.0, 1.25, 0.2);
+            const scleraMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            
+            const scleraLeft = new THREE.Mesh(scleraGeo, scleraMat);
+            eyeGroupLeft.add(scleraLeft);
+            const scleraRight = new THREE.Mesh(scleraGeo, scleraMat);
+            eyeGroupRight.add(scleraRight);
+
+            // Iris (Lilac purple galaxy look)
+            const irisGeo = new THREE.SphereGeometry(0.125, 16, 16);
+            irisGeo.scale(0.96, 1.22, 0.32);
+            const irisMat = new THREE.MeshStandardMaterial({
+                color: 0xc084fc,
+                emissive: 0x86198f,
+                emissiveIntensity: 0.35,
+                roughness: 0.1,
+                metalness: 0.1
+            });
+            const irisLeft = new THREE.Mesh(irisGeo, irisMat);
+            irisLeft.position.z = 0.038;
+            eyeGroupLeft.add(irisLeft);
+
+            const irisRight = new THREE.Mesh(irisGeo, irisMat);
+            irisRight.position.z = 0.038;
+            eyeGroupRight.add(irisRight);
+
+            // Pupil
+            const pupilGeo = new THREE.SphereGeometry(0.055, 16, 16);
+            pupilGeo.scale(1.0, 1.22, 0.3);
+            const pupilMat = new THREE.MeshBasicMaterial({ color: 0x2e0854 });
+            
+            const pupilLeft = new THREE.Mesh(pupilGeo, pupilMat);
+            pupilLeft.position.z = 0.024;
+            irisLeft.add(pupilLeft);
+
+            const pupilRight = new THREE.Mesh(pupilGeo, pupilMat);
+            pupilRight.position.z = 0.024;
+            irisRight.add(pupilRight);
+
+            // Highlights
+            const hiGeoBig = new THREE.SphereGeometry(0.03, 8, 8);
+            const hiMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            
+            const highlightLeft1 = new THREE.Mesh(hiGeoBig, hiMat);
+            highlightLeft1.position.set(0.04, 0.05, 0.035);
+            irisLeft.add(highlightLeft1);
+
+            const highlightRight1 = highlightLeft1.clone();
+            irisRight.add(highlightRight1);
+
+            const hiGeoSmall = new THREE.SphereGeometry(0.015, 6, 6);
+            const highlightLeft2 = new THREE.Mesh(hiGeoSmall, hiMat);
+            highlightLeft2.position.set(-0.04, -0.05, 0.035);
+            irisLeft.add(highlightLeft2);
+
+            const highlightRight2 = highlightLeft2.clone();
+            irisRight.add(highlightRight2);
+
+            // Eyelashes
+            const lashMat = new THREE.MeshBasicMaterial({ color: 0x1a1a24 });
+            const lashGeo = new THREE.TorusGeometry(0.18, 0.02, 6, 16, Math.PI / 1.4);
+            
+            const lashLeft = new THREE.Mesh(lashGeo, lashMat);
+            lashLeft.rotation.z = Math.PI / 8;
+            lashLeft.position.set(0, 0.09, 0.04);
+            eyeGroupLeft.add(lashLeft);
+
+            const lashRight = new THREE.Mesh(lashGeo, lashMat);
+            lashRight.rotation.z = -Math.PI / 8;
+            lashRight.position.set(0, 0.09, 0.04);
+            eyeGroupRight.add(lashRight);
+
+            // Eyelids
+            const lidGeo = new THREE.SphereGeometry(0.17, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
+            lidGeo.scale(1.06, 1.28, 0.38);
+            const lidMat = new THREE.MeshStandardMaterial({ color: 0xffe3d6, roughness: 0.55 });
+            
+            const lidLeft = new THREE.Mesh(lidGeo, lidMat);
+            lidLeft.rotation.x = -Math.PI / 2;
+            lidLeft.position.z = 0.02;
+            eyeGroupLeft.add(lidLeft);
+
+            const lidRight = lidLeft.clone();
+            eyeGroupRight.add(lidRight);
+
+            // Anime curved closed eyes
+            const squintGeo = new THREE.TorusGeometry(0.14, 0.022, 6, 16, Math.PI);
+            const squintMat = new THREE.MeshBasicMaterial({ color: 0x1a1a24 });
+            
+            const squintLeft = new THREE.Mesh(squintGeo, squintMat);
+            squintLeft.rotation.z = Math.PI;
+            squintLeft.position.set(-0.31, -0.04, 0.77);
+            squintLeft.visible = false;
+            headGroup.add(squintLeft);
+
+            const squintRight = squintLeft.clone();
+            squintRight.position.x = 0.31;
+            headGroup.add(squintRight);
+
+            // 6. Mouth & Tongue
+            const mouthGeo = new THREE.TorusGeometry(0.08, 0.018, 6, 20, Math.PI);
+            const mouthMat = new THREE.MeshBasicMaterial({ color: 0x560805 });
+            const mouth = new THREE.Mesh(mouthGeo, mouthMat);
+            mouth.position.set(0, -0.4, 0.76);
+            mouth.rotation.z = Math.PI;
+            headGroup.add(mouth);
+
+            const tongueGeo = new THREE.SphereGeometry(0.04, 12, 12);
+            tongueGeo.scale(1.0, 0.4, 0.1);
+            const tongueMat = new THREE.MeshBasicMaterial({ color: 0xff85a2 });
+            const tongue = new THREE.Mesh(tongueGeo, tongueMat);
+            tongue.position.set(0, -0.03, -0.01);
+            mouth.add(tongue);
+
+            // 7. Twin Tails & Hair Mass
+            const hairBackGeo = new THREE.SphereGeometry(0.85, 24, 24);
+            hairBackGeo.scale(1.06, 1.05, 1.05);
+            const hairBack = new THREE.Mesh(hairBackGeo, hairMat);
+            hairBack.position.set(0, 0.08, -0.16);
+            headGroup.add(hairBack);
+
+            // Framing Side strands
+            const frameStrandGeo = new THREE.CylinderGeometry(0.1, 0.01, 1.0, 12);
+            frameStrandGeo.scale(1.0, 1.0, 0.4);
+            
+            const leftFrame = new THREE.Mesh(frameStrandGeo, hairMat);
+            leftFrame.position.set(-0.73, -0.15, 0.35);
+            leftFrame.rotation.z = -0.18;
+            leftFrame.rotation.y = 0.1;
+            headGroup.add(leftFrame);
+
+            const rightFrame = leftFrame.clone();
+            rightFrame.position.x = 0.73;
+            rightFrame.rotation.z = 0.18;
+            headGroup.add(rightFrame);
+
+            // Forehead overlapping bangs
+            const bangCone = new THREE.ConeGeometry(0.14, 0.54, 8);
+            bangCone.scale(1.0, 1.0, 0.4);
+
+            const leftBang = new THREE.Mesh(bangCone, hairMat);
+            leftBang.position.set(-0.33, 0.49, 0.71);
+            leftBang.rotation.z = 0.32;
+            leftBang.rotation.x = 0.14;
+            headGroup.add(leftBang);
+
+            const rightBang = leftBang.clone();
+            rightBang.position.x = 0.33;
+            rightBang.rotation.z = -0.32;
+            headGroup.add(rightBang);
+
+            const centerBang = new THREE.Mesh(bangCone, hairMat);
+            centerBang.position.set(0.02, 0.54, 0.77);
+            centerBang.scale.set(1.22, 1.08, 0.55);
+            centerBang.rotation.z = 0.08;
+            centerBang.rotation.x = 0.22;
+            headGroup.add(centerBang);
+
+            // Buns (Twin tail anchor mounts)
+            const bunGeo = new THREE.SphereGeometry(0.24, 16, 16);
+            
+            const leftBun = new THREE.Mesh(bunGeo, hairMat);
+            leftBun.position.set(-0.64, 0.76, -0.14);
+            headGroup.add(leftBun);
+
+            const rightBun = leftBun.clone();
+            rightBun.position.x = 0.64;
+            headGroup.add(rightBun);
+
+            // Cat/Fox Ears (Twitchable)
+            const earGeoOuter = new THREE.ConeGeometry(0.2, 0.44, 4);
+            const innerEarMat = new THREE.MeshBasicMaterial({ color: 0xffccd5 });
+            const earGeoInner = new THREE.ConeGeometry(0.13, 0.32, 4);
+
+            const leftEar = new THREE.Group();
+            leftEar.position.set(-0.46, 0.95, 0.12);
+            leftEar.rotation.z = 0.24;
+            leftEar.rotation.x = -0.12;
+            
+            const lOuter = new THREE.Mesh(earGeoOuter, hairMat);
+            leftEar.add(lOuter);
+            const lInner = new THREE.Mesh(earGeoInner, innerEarMat);
+            lInner.position.set(0, 0.02, 0.04);
+            leftEar.add(lInner);
+            headGroup.add(leftEar);
+
+            const rightEar = new THREE.Group();
+            rightEar.position.set(0.46, 0.95, 0.12);
+            rightEar.rotation.z = -0.24;
+            rightEar.rotation.x = -0.12;
+            
+            const rOuter = new THREE.Mesh(earGeoOuter, hairMat);
+            rightEar.add(rOuter);
+            const rInner = new THREE.Mesh(earGeoInner, innerEarMat);
+            rInner.position.set(0, 0.02, 0.04);
+            rightEar.add(rInner);
+            headGroup.add(rightEar);
+
+            // Twin Tails chain segments sways
+            const segmentsCount = 3;
+            const leftTailBones = [];
+            const rightTailBones = [];
+
+            function buildTwinTail(parent, isLeft) {
+                let currentParent = parent;
+                const bones = [];
+                for (let i = 0; i < segmentsCount; i++) {
+                    const radius = 0.16 - i * 0.04;
+                    const len = 0.35;
+                    const jointGroup = new THREE.Group();
+                    
+                    if (i === 0) {
+                        jointGroup.position.set(isLeft ? -0.1 : 0.1, -0.1, 0);
+                    } else {
+                        jointGroup.position.set(0, -len + 0.04, 0);
+                    }
+                    
+                    const segmentGeo = new THREE.CylinderGeometry(radius, radius - 0.03, len, 8);
+                    segmentGeo.translate(0, -len/2, 0);
+                    const segmentMesh = new THREE.Mesh(segmentGeo, hairMat);
+                    
+                    jointGroup.add(segmentMesh);
+                    currentParent.add(jointGroup);
+                    bones.push(jointGroup);
+                    currentParent = jointGroup;
+                }
+                return bones;
+            }
+
+            leftTailBones.push(...buildTwinTail(leftBun, true));
+            rightTailBones.push(...buildTwinTail(rightBun, false));
+
+
+            // --- ONLINE GLTF WAIFU MODEL LOADING ---
+            let loadedModel = null;
+            let loadedMixer = null;
+            let loadedMorphMeshes = [];
+
+            if (window.THREE.GLTFLoader && !window.gltfLoadError) {
+                console.log("Starting internet 3D model loading...");
+                const gltfLoader = new THREE.GLTFLoader();
+                // Load Kawaii 3D model from masaaki-imai public GitHub repo via jsDelivr CDN
+                gltfLoader.load(
+                    'https://cdn.jsdelivr.net/gh/masaaki-imai/3D-anime@main/public/3d/kawaii22.glb',
+                    function (gltf) {
+                        console.log("Internet 3D model loaded successfully!");
+                        const model = gltf.scene;
+                        
+                        // Scale & position the loaded 3D character correctly
+                        model.scale.set(0.68, 0.68, 0.68);
+                        model.position.set(0, -1.3, -0.1);
+                        model.rotation.y = 0;
+
+                        // Add to root group
+                        rootGroup.add(model);
+                        loadedModel = model;
+
+                        // Hide the procedural primitive fallback
+                        proceduralAvatar.visible = false;
+
+                        // Setup animations if present
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            loadedMixer = new THREE.AnimationMixer(model);
+                            // Play the default idle/breathing sequence
+                            const action = loadedMixer.clipAction(gltf.animations[0]);
+                            action.play();
+                        }
+
+                        // Search and index morph targets for facial animations (blinking/lip sync)
+                        model.traverse((child) => {
+                            if (child.isMesh && child.morphTargetInfluences) {
+                                loadedMorphMeshes.push(child);
+                            }
+                        });
+                    },
+                    undefined,
+                    function (err) {
+                        console.warn("Failed to download model from internet (offline/slow), using offline 3D fallback.", err);
+                        // Procedural avatar remains visible
+                    }
+                );
+            }
+
+            // Interactive inputs
+            let mouseX = 0, mouseY = 0;
+            window.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+                mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+            });
+
+            window.updateSensors = function(pitch, roll) {
+                mouseX = Math.max(-1.0, Math.min(1.0, roll / 42.0));
+                mouseY = Math.max(-1.0, Math.min(1.0, pitch / 42.0));
+            };
+
+            // Resize handle
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // Timers
+            let blinkTime = 0;
+            let nextBlink = 2.5;
+            let lookTargetX = 0;
+            let lookTargetY = 0;
+            let nextLookChange = 1.0;
+
+            // Loop
+            function animate() {
+                requestAnimationFrame(animate);
+                const time = (Date.now() - startTime) / 1000;
+
+                // Update loaded animations
+                if (loadedMixer) {
+                    loadedMixer.update(0.016);
+                }
+
+                // Eyelids Blinking
+                blinkTime += 0.016;
+                let isBlinking = false;
+                if (blinkTime >= nextBlink) {
+                    isBlinking = true;
+                    if (blinkTime >= nextBlink + 0.14) {
+                        blinkTime = 0;
+                        nextBlink = 2.0 + Math.random() * 4.5;
+                    }
+                }
+
+                // Breathing/Bobbing
+                let bobFreq = 2.4;
+                let bobAmp = 0.03;
+                if (activeState === 7) {
+                    bobFreq = 8.5;
+                    bobAmp = 0.016;
+                }
+                
+                // Bob root group
+                rootGroup.position.y = Math.sin(time * bobFreq) * bobAmp;
+
+                // Animate internet model face morph targets if loaded
+                if (loadedModel && loadedMorphMeshes.length > 0) {
+                    loadedMorphMeshes.forEach(mesh => {
+                        const dict = mesh.morphTargetDictionary;
+                        if (dict) {
+                            // Lip sync target mapping (MouthOpen / vowel_a / mouth_open)
+                            const openIdx = dict['Mouth_Open'] || dict['mouth_open'] || dict['MouthOpen'] || dict['vowel_a'] || dict['mouthOpen'] || 0;
+                            if (activeState === 7) {
+                                mesh.morphTargetInfluences[openIdx] = 0.1 + Math.abs(Math.sin(time * 26.0)) * 0.72;
+                            } else if (activeState === 2) {
+                                mesh.morphTargetInfluences[openIdx] = 0.12; // small 'o' thinking
+                            } else {
+                                mesh.morphTargetInfluences[openIdx] = 0.0;
+                            }
+
+                            // Blink target mapping
+                            const blinkLeftIdx = dict['Blink_L'] || dict['blink_left'] || dict['EyeBlink_L'] || dict['Blink'] || 1;
+                            const blinkRightIdx = dict['Blink_R'] || dict['blink_right'] || dict['EyeBlink_R'] || dict['Blink'] || 2;
+                            if (isBlinking) {
+                                mesh.morphTargetInfluences[blinkLeftIdx] = 1.0;
+                                mesh.morphTargetInfluences[blinkRightIdx] = 1.0;
+                            } else {
+                                mesh.morphTargetInfluences[blinkLeftIdx] = 0.0;
+                                mesh.morphTargetInfluences[blinkRightIdx] = 0.0;
+                            }
+                        }
+                    });
+
+                    // Face tracking on loaded model (rotate neck/head bones slightly)
+                    const headBone = loadedModel.getObjectByName("Head") || loadedModel.getObjectByName("Neck");
+                    if (headBone) {
+                        headBone.rotation.y += (mouseX * 0.28 - headBone.rotation.y) * 0.08;
+                        headBone.rotation.x += (-mouseY * 0.18 - headBone.rotation.x) * 0.08;
+                    }
+                }
+
+                // Animate procedural fallback fallback
+                if (proceduralAvatar.visible) {
+                    leftBun.position.y = 0.76 + Math.sin(time * bobFreq * 1.5) * 0.015;
+                    rightBun.position.y = 0.76 + Math.sin(time * bobFreq * 1.5) * 0.015;
+
+                    if (Math.sin(time * 0.5) > 0.86) {
+                        leftEar.rotation.z = 0.24 + Math.sin(time * 30) * 0.06;
+                        rightEar.rotation.z = -0.24 - Math.sin(time * 30) * 0.06;
+                    }
+
+                    // Twin tails swaying
+                    const swayFrequency = 2.6;
+                    const swayIntensity = 0.2;
+                    leftTailBones.forEach((joint, idx) => {
+                        joint.rotation.z = 0.1 + Math.sin(time * swayFrequency - idx * 0.8) * (swayIntensity - idx * 0.03);
+                        joint.rotation.x = Math.cos(time * swayFrequency * 0.5 - idx * 0.6) * 0.08;
+                    });
+                    rightTailBones.forEach((joint, idx) => {
+                        joint.rotation.z = -0.1 - Math.sin(time * swayFrequency - idx * 0.8) * (swayIntensity - idx * 0.03);
+                        joint.rotation.x = Math.cos(time * swayFrequency * 0.5 - idx * 0.6) * 0.08;
+                    });
+
+                    // Blinking
+                    if (isBlinking) {
+                        lidLeft.rotation.x = 0;
+                        lidRight.rotation.x = 0;
+                    } else {
+                        lidLeft.rotation.x = -Math.PI / 1.38;
+                        lidRight.rotation.x = -Math.PI / 1.38;
+                    }
+
+                    // Look around
+                    nextLookChange -= 0.016;
+                    if (nextLookChange <= 0) {
+                        lookTargetX = (Math.random() - 0.5) * 0.28;
+                        lookTargetY = (Math.random() - 0.5) * 0.18;
+                        nextLookChange = 2.0 + Math.random() * 3.0;
+                    }
+
+                    let targetEyeX = lookTargetX;
+                    let targetEyeY = lookTargetY;
+                    if (Math.abs(mouseX) > 0.05 || Math.abs(mouseY) > 0.05) {
+                        targetEyeX = mouseX * 0.18;
+                        targetEyeY = mouseY * 0.14;
+                    }
+
+                    let targetHeadRotY = mouseX * 0.26;
+                    let targetHeadRotX = -mouseY * 0.16;
+                    let targetHeadRotZ = 0;
+
+                    let cheekColor = 0xff5c8a;
+                    let cheekOpacity = 0.45;
+                    let smileOpenY = 0.05;
+                    let smileScaleX = 1.0;
+                    let isSquinting = false;
+
+                    if (activeState === 1) { // listening
+                        targetHeadRotZ = Math.sin(time * 3.0) * 0.05 + 0.07;
+                        targetEyeY += 0.04;
+                        cheekColor = 0x8ecae6;
+                        cheekOpacity = 0.65;
+                        smileOpenY = 0.12;
+                    } else if (activeState === 2) { // thinking
+                        targetHeadRotY = 0.18;
+                        targetHeadRotX = 0.06;
+                        targetHeadRotZ = -0.06;
+                        targetEyeX = 0.12;
+                        targetEyeY = 0.1;
+                        cheekColor = 0xfb6f92;
+                        cheekOpacity = 0.75;
+                        smileOpenY = 0.03;
+                        smileScaleX = 0.62;
+                    } else if (activeState === 3) { // planning
+                        targetHeadRotY = Math.sin(time * 3.0) * 0.1;
+                        targetEyeX = Math.cos(time * 3.0) * 0.08;
+                        smileOpenY = 0.08;
+                    } else if (activeState === 4) { // executing
+                        targetHeadRotX = Math.sin(time * 5.0) * 0.05;
+                        smileOpenY = 0.06;
+                    } else if (activeState === 5) { // success
+                        isSquinting = true;
+                        targetHeadRotY = Math.sin(time * 4.0) * 0.08;
+                        targetHeadRotZ = Math.cos(time * 4.0) * 0.06;
+                        smileOpenY = 0.38;
+                        smileScaleX = 1.38;
+                        cheekOpacity = 0.88;
+                    } else if (activeState === 6) { // error
+                        targetHeadRotZ = Math.sin(time * 15.0) * 0.05;
+                        targetHeadRotX = 0.12;
+                        targetEyeX = Math.sin(time * 18.0) * 0.04;
+                        smileOpenY = 0.02;
+                        smileScaleX = 0.78;
+                        cheekColor = 0xef233c;
+                        cheekOpacity = 0.85;
+                    } else if (activeState === 7) { // talking
+                        smileOpenY = 0.12 + Math.abs(Math.sin(time * 26.0)) * 0.32;
+                        smileScaleX = 1.0 + Math.sin(time * 13.0) * 0.16;
+                        targetHeadRotY += Math.sin(time * 6.5) * 0.04;
+                        targetHeadRotX += Math.cos(time * 5.5) * 0.02;
+                        cheekOpacity = 0.52;
+                    }
+
+                    // Apply lerps
+                    headGroup.rotation.y += (targetHeadRotY - headGroup.rotation.y) * 0.08;
+                    headGroup.rotation.x += (targetHeadRotX - headGroup.rotation.x) * 0.08;
+                    headGroup.rotation.z += (targetHeadRotZ - headGroup.rotation.z) * 0.08;
+
+                    if (isSquinting) {
+                        scleraLeft.visible = false; scleraRight.visible = false;
+                        irisLeft.visible = false; irisRight.visible = false;
+                        lidLeft.visible = false; lidRight.visible = false;
+                        squintLeft.visible = true; squintRight.visible = true;
+                    } else {
+                        scleraLeft.visible = true; scleraRight.visible = true;
+                        irisLeft.visible = true; irisRight.visible = true;
+                        lidLeft.visible = true; lidRight.visible = true;
+                        squintLeft.visible = false; squintRight.visible = false;
+
+                        irisLeft.position.x += (targetEyeX - irisLeft.position.x) * 0.14;
+                        irisLeft.position.y += (targetEyeY - irisLeft.position.y) * 0.14;
+                        irisRight.position.x += (targetEyeX - irisRight.position.x) * 0.14;
+                        irisRight.position.y += (targetEyeY - irisRight.position.y) * 0.14;
+                    }
+
+                    blushMat.color.lerp(new THREE.Color(cheekColor), 0.1);
+                    blushMat.opacity = cheekOpacity;
+
+                    mouth.scale.set(smileScaleX, smileOpenY * 3.5, 1.0);
+                    
+                    if (activeState === 6) {
+                        mouth.rotation.z = 0;
+                        mouth.position.y = -0.44;
+                    } else {
+                        mouth.rotation.z = Math.PI;
+                        mouth.position.y = -0.4;
+                    }
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        function fallback2D() {
+            const ctx = canvas.getContext("2d");
+            let angle = 0;
+            function drawFace() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                
+                ctx.fillStyle = "#ffe3d6";
+                ctx.beginPath();
+                ctx.arc(cx, cy, 110, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = "#ffa6c9";
+                ctx.beginPath();
+                ctx.arc(cx, cy - 60, 80, 0, Math.PI, true);
+                ctx.fill();
+                
+                ctx.fillStyle = "rgba(255, 92, 138, 0.4)";
+                ctx.beginPath();
+                ctx.arc(cx - 48, cy + 18, 18, 0, Math.PI * 2);
+                ctx.arc(cx + 48, cy + 18, 18, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = "#1a1a24";
+                if (activeState === 5) {
+                    ctx.strokeStyle = "#1a1a24";
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.arc(cx - 36, cy - 10, 14, Math.PI, 0);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(cx + 36, cy - 10, 14, Math.PI, 0);
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(cx - 36, cy - 10, 13, 0, Math.PI * 2);
+                    ctx.arc(cx + 36, cy - 10, 13, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.strokeStyle = "#560805";
+                ctx.lineWidth = 5;
+                ctx.lineCap = "round";
+                ctx.beginPath();
+                if (activeState === 6) {
+                    ctx.arc(cx, cy + 42, 10, Math.PI, 0);
+                } else {
+                    ctx.arc(cx, cy + 28, 10, 0, Math.PI);
+                }
+                ctx.stroke();
+                
+                angle += 0.05;
+                requestAnimationFrame(drawFace);
+            }
+            drawFace();
+        }
+    </script>
+</body>
+</html>
